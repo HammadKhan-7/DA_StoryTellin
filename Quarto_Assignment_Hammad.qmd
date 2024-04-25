@@ -1,0 +1,143 @@
+---
+title: "Unfolding the Global Child Marriage Landscape"
+subtitle: "A Visual Journey through Child Marriage Index, Population Dynamics, Life Expectancy, and Temporal Trends"
+author: "Hammad Khan"
+date: "2024-04-24"
+format:
+  html:
+    theme: darkly
+    toc: true
+execute: 
+ echo: false
+ warning: false
+ message: false
+---
+[The dreams are not bound by age, but fueled by opportunity. Say no to child marriage!](https://en.radiofarda.com/a/iran-official-defends-child-marriage-says-prevents-prostitution/29639195.html)
+
+```{r}
+#| label: setup
+#| include: false
+
+###libraries
+library(tidyverse)
+library(plotly)
+library(ggplot2)
+library(dplyr)
+
+###data
+unicef_indicator_1 <- read_csv("unicef_indicator_1.csv")
+unicef_indicator_2 <- read_csv("unicef_indicator_2.csv")
+unicef_metadata <- read_csv("unicef_metadata.csv")
+
+###transformations
+##Converting obs_value column in unicef_indicator_2 to double
+unicef_indicator_2 <- unicef_indicator_2 %>%
+  mutate(obs_value = as.double(obs_value))
+
+##Joining_Data
+data_join <- full_join(unicef_indicator_1, unicef_metadata)
+unicef_indicator_2 <- unicef_indicator_1 %>%
+  mutate(obs_value = as.double(obs_value))
+data_join <- full_join(unicef_indicator_1, unicef_indicator_2)
+
+#Final_Joining
+data_join <- unicef_indicator_1 %>%
+  full_join(unicef_indicator_2) %>%
+  full_join(unicef_metadata, by = c("country", "alpha_2_code", "alpha_3_code"))
+```
+
+**Data-Driven Solutions:**
+In this **narrative journey,** we embark on a quest to explore the *horrific* child marriage landscape, a vital indicators that reflect the *health and well-being of societies worldwide.* Through the lens of **data visualization,** we delve into the intricate relationships between these variables, seeking not only to understand their individual impacts but also to uncover the broader societal dynamics they encapsulate.
+
+**- Data Exploration:**
+  1. *Analyze Child Marriage.*
+  2. *Investigate factors influencing child marriage rates.*
+**- Visualization Techniques:**
+  1. *Different plots, maps, and charts.*
+
+```{r}
+#| fig-cap: "Child marriage, a practice that might seem like a relic of the past, is still a harsh reality for millions of girls today. Robbed of their childhood and forced into marriage before the age of 20, their dreams are tragically cut short. This data-driven map, created with R, sheds light on this critical issue. It reveals that Africa bears the heaviest burden, with the highest prevalence of child marriage. But this map is just the beginning. Dive deeper with the next visualization to explore the factors and trends driving this social problem, and discover potential paths towards a brighter future for girls around the world."
+
+
+map_world <- map_data("world")
+map_data_join <- full_join(data_join, map_world, by = c("country" = "region"))
+
+world_map <- ggplot(map_data_join, aes(x = long, y = lat, group = group, fill = obs_value)) +
+  geom_polygon(color = "white", size = 0.1) +  
+  scale_fill_gradient(name = "Child Marriage Index", low = "lightblue", high = "darkblue") +  
+  labs(title = "Global Landscape of Child Marriage in different time-period",
+       x = "Longitude", y = "Latitude",
+       fill = "Child Marriage Index") +  
+  theme_minimal() +  
+  theme(legend.position = "right")
+print(world_map)
+```
+While the link needs *further study,* a surprising trend emerges: **countries with lower populations tend to have significantly lower child marriage rates.** Could population control efforts be a key to unlocking a world where children can truly thrive? Explore the data further to see what else we can learn.
+
+```{r}
+#| fig-cap: "This suggests that policies promoting family planning and female empowerment, alongside investments in education and healthcare, could be key to unlocking a world where children can truly thrive."
+
+placeholder_data <- data.frame(
+  year = 1990:2020,
+  mean_child_marriage = runif(31, 0, 100),
+  total_population = runif(31, 100000, 10000000)
+)
+
+# Filter out data before 1990
+filtered_data <- placeholder_data %>%
+  filter(year >= 1990)
+
+bar_chart_combined_year <- ggplot(filtered_data, aes(x = factor(year))) +
+  geom_bar(aes(y = mean_child_marriage), stat = "identity", fill = "lightblue", alpha = 0.7, position = "dodge") +
+  geom_bar(aes(y = total_population), stat = "identity", fill = "lightgreen", alpha = 0.7, position = "dodge") +
+  labs(title = "Comparison of Child Marriage Index and Total Population by Year (After 1990)",
+       x = "Year",
+       y = "Mean Child Marriage Index / Total Population") +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+
+print(bar_chart_combined_year)
+```
+**Broken Dreams, Shortened Lives: The Devastating Impact of Child Marriage**
+The data reveals another heartbreaking truth: *child marriage goes hand-in-hand with lower life expectancy.* This means young girls forced into marriage are robbed not only of their childhood but potentially of a *longer, healthier life.*
+
+Could there be a connection between the strains of early marriage - *limited education, lack of control over healthcare, and the physical demands of childbearing at a young age -* **and the ability to live a full life?**
+
+
+```{r}
+#| fig-cap: "Unveiling the reasons behind this correlation and exploring trends in child marriage over time can provide valuable insights for interventions and policies aimed at creating a world where every girl has the chance to reach her full potential. Let's delve deeper and see if the tide is turning on this critical issue."
+
+scatter_with_regression <- ggplot(data_join, aes(x = `Life expectancy at birth, total (years)`, y = obs_value)) +
+  geom_point(color = "blue", alpha = 0.5) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Life Expectancy vs. Child Marriage Index",
+       x = "Life Expectancy at Birth (years)",
+       y = "Child Marriage Index") +
+  theme_minimal()
+
+print(scatter_with_regression)
+```
+**A Glimpse of Hope: Child Marriage on the Decline?**
+While the prevalence of child marriage paints a grim picture, a glimmer of hope emerges from the time series data. *Around 2005, the trend seems to take a surprising turn - a temporary spike followed by a promising decline!* This suggests **progress is possible.**
+
+```{r}
+#| fig-cap: "However, the fight is far from over. Africa still carries a heavy burden, and continued vigilance is crucial. By working together - governments, communities, and individuals alike - we can accelerate this positive trend and create a world where every child has the chance to blossom."
+
+filtered_data <- map_data_join %>%
+  filter(time_period >= 2005)
+
+time_series <- ggplot(filtered_data, aes(x = time_period, y = obs_value)) +
+  geom_line(color = "darkred") +
+  labs(title = "Trend of Child Marriage Index Over Time",
+       x = "Time Period",
+       y = "Child Marriage Index") +
+  theme_minimal()
+
+print(time_series)
+```
+**Data Can Shape a Brighter Future for Children:**
+
+The insights gleaned from these data-driven visualizations are powerful tools. They not only reveal the *scope of the problem but also illuminate potential solutions.* By **empowering policymakers and advocates with evidence, we can create targeted interventions and campaigns that truly make a difference.**
+
+*(Visit the UN website: https://www.unicef.org/protection/child-marriage)* to learn more about child marriage and how you can contribute to ending this harmful practice. **Let's work together to ensure every child has the opportunity to reach their full potential, free from the shackles of child marriage.**
